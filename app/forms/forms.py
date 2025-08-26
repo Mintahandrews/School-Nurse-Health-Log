@@ -145,9 +145,6 @@ class RecordForm(FlaskForm):
     # Legacy fields referenced by controller; keep Optional
     pulse = IntegerField('Pulse (bpm)', validators=[Optional(), NumberRange(min=30, max=250)])
     blood_pressure = StringField('Blood Pressure', validators=[Optional(), Length(max=20)])
-    # New split blood pressure fields used by controller/DB
-    blood_pressure_systolic = IntegerField('Blood Pressure Systolic', validators=[Optional(), NumberRange(min=40, max=300)])
-    blood_pressure_diastolic = IntegerField('Blood Pressure Diastolic', validators=[Optional(), NumberRange(min=20, max=200)])
     heart_rate = IntegerField('Heart Rate (bpm)', validators=[
         Optional(), 
         NumberRange(min=30, max=250, message='Heart rate must be between 30-250 bpm')
@@ -160,7 +157,7 @@ class RecordForm(FlaskForm):
         Optional(), 
         NumberRange(min=70, max=100, message='Oxygen saturation must be between 70-100%')
     ])
-    # Split blood pressure into systolic and diastolic
+    # Split blood pressure into systolic and diastolic (single authoritative definition)
     blood_pressure_systolic = IntegerField('Systolic BP', validators=[
         Optional(),
         NumberRange(min=70, max=200, message='Systolic BP must be between 70-200 mmHg')

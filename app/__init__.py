@@ -1,8 +1,10 @@
 from flask import Flask
 from flask_bootstrap import Bootstrap
+from flask_wtf import CSRFProtect
 
 # Initialize Flask extensions
 bootstrap = Bootstrap()
+csrf = CSRFProtect()
 
 def create_app(config_name='default'):
     """Create and configure the Flask application"""
@@ -16,6 +18,7 @@ def create_app(config_name='default'):
     
     # Initialize extensions with app
     bootstrap.init_app(app)
+    csrf.init_app(app)
     
     # Register blueprints
     from app.controllers.main import main as main_blueprint

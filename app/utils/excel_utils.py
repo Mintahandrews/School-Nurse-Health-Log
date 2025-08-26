@@ -70,28 +70,27 @@ def initialize_excel_file(excel_file=None):
     # Write headers
     sheet.append(headers)
     
-    # Apply basic styling
+    # Style: headers bold, colored, centered; freeze top row; set row height
     header_font = Font(bold=True, color='FFFFFF')
     header_fill = PatternFill(start_color='4F81BD', end_color='4F81BD', fill_type='solid')
+    header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    sheet.freeze_panes = 'A2'
+    sheet.row_dimensions[1].height = 22
     
     for cell in sheet[1]:
         cell.font = header_font
         cell.fill = header_fill
+        cell.alignment = header_alignment
     
-    # Set column widths
+    # Set column widths based on header length as initial spacing
     for col in sheet.columns:
-        max_length = 0
-        column = col[0].column_letter
-        
-        for cell in col:
-            try:
-                if len(str(cell.value)) > max_length:
-                    max_length = len(cell.value)
-            except:
-                pass
-        
-        adjusted_width = (max_length + 2) * 1.2
-        sheet.column_dimensions[column].width = min(adjusted_width, 30)
+        try:
+            column = col[0].column_letter
+        except Exception:
+            continue
+        header_len = len(str(col[0].value)) if col and col[0].value else 10
+        adjusted_width = max(12, min((header_len + 2) * 1.1, 32))
+        sheet.column_dimensions[column].width = adjusted_width
     
     # Save the workbook
     wb.save(excel_file)
@@ -129,6 +128,17 @@ def export_records_to_excel(records, output_file=None):
     # Get headers and write them to the worksheet
     headers = get_excel_headers()
     ws.append(headers)
+    
+    # Apply header styling, freeze pane, and initial widths
+    header_font = Font(bold=True, color='FFFFFF')
+    header_fill = PatternFill(start_color='4F81BD', end_color='4F81BD', fill_type='solid')
+    header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    ws.freeze_panes = 'A2'
+    ws.row_dimensions[1].height = 22
+    for cell in ws[1]:
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
     
     # Write data rows
     for record in records:
@@ -197,6 +207,38 @@ def export_records_to_excel(records, output_file=None):
             row.append(format_value_for_excel(value))
         
         ws.append(row)
+    
+    # Auto-size columns based on content (bounded), and set alignment for cells
+    max_width = 32
+    min_width = 12
+    center_headers = {
+        'Date of Visit', 'Time of Visit', 'Temperature (°C)', 'Pulse (bpm)',
+        'Respiratory Rate (cpm)', 'Oxygen Saturation (%)', 'Blood Pressure (mmHg)',
+        'Grade/Year Level', 'Parent Notified', 'Incident Report Required'
+    }
+    center_align = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    left_align = Alignment(horizontal='left', vertical='center', wrap_text=True)
+    
+    for col in ws.columns:
+        try:
+            column_letter = col[0].column_letter
+        except Exception:
+            continue
+        # Determine width
+        lengths = []
+        for cell in col:
+            val = '' if cell.value is None else str(cell.value)
+            lengths.append(len(val))
+            # Apply alignment: center for numeric/vitals/dates headers, left otherwise
+            header_text = ws.cell(row=1, column=cell.column).value
+            if cell.row == 1:
+                continue
+            if header_text in center_headers:
+                cell.alignment = center_align
+            else:
+                cell.alignment = left_align
+        best = max(lengths or [min_width])
+        ws.column_dimensions[column_letter].width = max(min_width, min(int(best * 1.1) + 2, max_width))
     
     # Save the workbook
     wb.save(output_file)

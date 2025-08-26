@@ -199,12 +199,12 @@
                                                 <div class="text-muted small">Temperature</div>
                                                 <div class="fw-bold">
                                                     {% if record.temperature %}
-                                                        {{ record.temperature }} °F
+                                                        {{ record.temperature }} °C
                                                     {% else %}
                                                         <span class="text-muted fst-italic">Not recorded</span>
                                                     {% endif %}
                                                 </div>
-                                                <div class="text-muted small">Normal: 97.7 - 99.5°F</div>
+                                                <div class="text-muted small">Normal: 36.5 - 37.5°C</div>
                                             </div>
                                         </div>
                                     </div>
@@ -217,15 +217,17 @@
                                                 </div>
                                             </div>
                                             <div>
-                                                <div class="text-muted small">Pulse</div>
+                                                <div class="text-muted small">Heart Rate</div>
                                                 <div class="fw-bold">
-                                                    {% if record.pulse %}
-                                                        {{ record.pulse }} BPM
+                                                    {% if record.heart_rate %}
+                                                        {{ record.heart_rate }} bpm
+                                                    {% elif record.pulse %}
+                                                        {{ record.pulse }} bpm
                                                     {% else %}
                                                         <span class="text-muted fst-italic">Not recorded</span>
                                                     {% endif %}
                                                 </div>
-                                                <div class="text-muted small">Normal: 60-100 BPM</div>
+                                                <div class="text-muted small">Normal: 60-100 bpm</div>
                                             </div>
                                         </div>
                                     </div>
@@ -240,7 +242,9 @@
                                             <div>
                                                 <div class="text-muted small">Blood Pressure</div>
                                                 <div class="fw-bold">
-                                                    {% if record.blood_pressure %}
+                                                    {% if record.blood_pressure_systolic and record.blood_pressure_diastolic %}
+                                                        {{ record.blood_pressure_systolic }}/{{ record.blood_pressure_diastolic }} mmHg
+                                                    {% elif record.blood_pressure %}
                                                         {{ record.blood_pressure }} mmHg
                                                     {% else %}
                                                         <span class="text-muted fst-italic">Not recorded</span>

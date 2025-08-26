@@ -60,7 +60,7 @@ def index():
 def search():
     """Search for records"""
     form = SearchForm()
-    results = []
+    records = []
     
     if form.validate_on_submit() or request.args.get('search_term'):
         search_term = form.search_term.data or request.args.get('search_term', '')
@@ -68,15 +68,20 @@ def search():
         
         conn = get_db_connection()
         search_pattern = f"%{search_term}%"
-        results = conn.execute(
+        rows = conn.execute(
             '''SELECT * FROM records 
                WHERE full_name LIKE ? OR patient_id LIKE ? OR nurse_name LIKE ?
                ORDER BY date_of_visit DESC, time_of_visit DESC''', 
             (search_pattern, search_pattern, search_pattern)
         ).fetchall()
         conn.close()
+        # Normalize visit_reason for template compatibility
+        for r in rows:
+            d = dict(r)
+            d['visit_reason'] = d.get('visit_reason') or d.get('visit_reason_category')
+            records.append(d)
     
-    return render_template('search.html', form=form, results=results, title="Search Records")
+    return render_template('search.html', form=form, records=records, title="Search Records")
 
 @main.route('/add', methods=['GET', 'POST'])
 def add_record():
@@ -246,6 +251,9 @@ def view_record(patient_id):
         flash('Record not found', 'danger')
         return redirect(url_for('main.index'))
     
+    # Normalize to dict and ensure template-friendly keys
+    record = dict(record)
+    record['visit_reason'] = record.get('visit_reason') or record.get('visit_reason_category')
     return render_template('view_record.html', record=record, title="View Health Record")
 
 @main.route('/export')
