@@ -3,7 +3,7 @@ services:
     name: nurse-health-log
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn run:app
+    startCommand: gunicorn -b 0.0.0.0:$PORT run:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
@@ -14,3 +14,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
     plan: free
+    disk:
+      name: data
+      mountPath: /opt/render/project/src/instance
+      sizeGB: 1

@@ -702,21 +702,6 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <!-- Visit Reason -->
-                            <div class="col-12">
-                                <div class="form-group">
-                                    {{ form.visit_reason.label(class="form-label required-field") }}
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="bi bi-question-circle"></i></span>
-                                        {{ form.visit_reason(class="form-select" + (' is-invalid' if form.visit_reason.errors else '')) }}
-                                    </div>
-                                    {% if form.visit_reason.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.visit_reason.errors[0] }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
                         </div>
                         
                         <div class="row mb-4">
@@ -726,39 +711,6 @@
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="bi bi-journal-medical"></i></span>
                                         {{ form.visit_reason(class="form-select" + (' is-invalid' if form.visit_reason.errors else '')) }}
-                                    </div>
-                                    
-                                    <div class="mt-2">
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" name="visit_reason_radio" id="reason-injury" value="Injury" onclick="document.getElementById('{{ form.visit_reason.id }}').value='Injury'">
-                                            <label class="form-check-label" for="reason-injury">
-                                                <span class="badge bg-danger">Injury</span>
-                                            </label>
-                                        </div>
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" name="visit_reason_radio" id="reason-illness" value="Illness" onclick="document.getElementById('{{ form.visit_reason.id }}').value='Illness'">
-                                            <label class="form-check-label" for="reason-illness">
-                                                <span class="badge bg-warning">Illness</span>
-                                            </label>
-                                        </div>
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" name="visit_reason_radio" id="reason-medication" value="Medication" onclick="document.getElementById('{{ form.visit_reason.id }}').value='Medication'">
-                                            <label class="form-check-label" for="reason-medication">
-                                                <span class="badge bg-info">Medication</span>
-                                            </label>
-                                        </div>
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" name="visit_reason_radio" id="reason-screening" value="Screening" onclick="document.getElementById('{{ form.visit_reason.id }}').value='Screening'">
-                                            <label class="form-check-label" for="reason-screening">
-                                                <span class="badge bg-success">Screening</span>
-                                            </label>
-                                        </div>
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" name="visit_reason_radio" id="reason-other" value="Other" onclick="document.getElementById('{{ form.visit_reason.id }}').value='Other'">
-                                            <label class="form-check-label" for="reason-other">
-                                                <span class="badge bg-secondary">Other</span>
-                                            </label>
-                                        </div>
                                     </div>
                                 </div>
                             </div>

@@ -8,17 +8,13 @@ from psycopg2.extras import DictCursor
 from flask import current_app
 
 def get_db_connection():
-    """Create and return a database connection"""
-    if os.environ.get('FLASK_ENV') == 'production':
-        # Use PostgreSQL in production (Render provides DATABASE_URL)
-        conn = psycopg2.connect(os.environ.get('DATABASE_URL'), sslmode='require')
-        conn.cursor_factory = DictCursor
-    else:
-        # Use SQLite in development
-        db_file = current_app.config['DB_FILE']
-        os.makedirs(os.path.dirname(db_file), exist_ok=True)
-        conn = sqlite3.connect(db_file)
-        conn.row_factory = sqlite3.Row
+    """Create and return a database connection (SQLite for all environments)."""
+    # Always use SQLite to keep schema and migrations consistent across envs.
+    # Render is configured with a persistent disk mounted at instance/.
+    db_file = current_app.config['DB_FILE']
+    os.makedirs(os.path.dirname(db_file), exist_ok=True)
+    conn = sqlite3.connect(db_file)
+    conn.row_factory = sqlite3.Row
     return conn
 
 def init_db():
