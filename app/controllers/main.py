@@ -219,7 +219,7 @@ def edit_record(patient_id):
     
     return render_template('record_form.html', form=form, title="Edit Health Record", record=record)
 
-@main.route('/delete/<patient_id>', methods=['GET', 'POST'])
+@main.route('/delete/<patient_id>', methods=['POST'])
 def delete_record(patient_id):
     """Delete a health record"""
     conn = get_db_connection()

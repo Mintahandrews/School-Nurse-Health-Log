@@ -21,7 +21,7 @@ def get_excel_headers():
         
         # Visit Information
         'Academic Year', 'Academic Term', 'Date of Visit', 'Time of Visit', 
-        'Brought In By', 'Nurse Name', 'Visit Reason Category', 'Severity Level',
+        'Brought In By', 'Nurse Name', 'Visit Reason Category', 'Severity Level', 'Visit Details',
         
         # Vital Signs
         'Temperature (°C)', 'Pulse (bpm)', 'Respiratory Rate (cpm)', 
@@ -177,6 +177,8 @@ def export_records_to_excel(records, output_file=None):
                     # Fallback to any legacy combined field
                     row.append(format_value_for_excel(record.get('blood_pressure')))
                 continue
+            elif header == 'Visit Details':
+                field_name = 'visit_details'
             elif header == 'Special Medical Needs':
                 field_name = 'special_medical_needs'
             elif header == 'Next Step(s)':

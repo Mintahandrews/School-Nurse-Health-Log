@@ -192,9 +192,12 @@
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                                                 <i class="bi bi-x me-1"></i> Cancel
                                             </button>
-                                            <a href="{{ url_for('main.delete_record', patient_id=record.patient_id) }}" class="btn btn-danger">
-                                                <i class="bi bi-trash me-1"></i> Delete
-                                            </a>
+                                            <form method="post" action="{{ url_for('main.delete_record', patient_id=record.patient_id) }}">
+                                                {{ csrf_token() if csrf_token is defined }}
+                                                <button type="submit" class="btn btn-danger">
+                                                    <i class="bi bi-trash me-1"></i> Delete
+                                                </button>
+                                            </form>
                                         </div>
                                     </div>
                                 </div>
