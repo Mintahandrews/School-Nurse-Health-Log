@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Search Records - School Nurse Health Log{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">Search Records</h4>
+    </div>
+    <div class="card-body">
+        <form method="POST" class="row g-3">
+            {{ form.hidden_tag() }}
+            <div class="col-md-8">
+                {{ form.search_term(class="form-control", placeholder="Enter patient name, ID, or nurse name") }}
+            </div>
+            <div class="col-md-4">
+                {{ form.submit(class="btn btn-primary w-100") }}
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if records %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Search Results ({{ records|length }} records found)</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Patient ID</th>
+                        <th>Name</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Reason</th>
+                        <th>Nurse</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                    <tr class="record-row">
+                        <td>{{ record.patient_id }}</td>
+                        <td>{{ record.full_name }}</td>
+                        <td>{{ record.date_of_visit }}</td>
+                        <td>{{ record.time_of_visit }}</td>
+                        <td>
+                            {% if record.visit_reason %}
+                                <span class="badge bg-{{ 
+                                    'danger' if record.visit_reason == 'Injury' else 
+                                    'warning' if record.visit_reason == 'Illness' else 
+                                    'info' if record.visit_reason == 'Medication' else 
+                                    'success' if record.visit_reason == 'Screening' else 
+                                    'secondary' 
+                                }}">{{ record.visit_reason }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Not specified</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ record.nurse_name }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('main.view_record', patient_id=record.patient_id) }}" class="btn btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('main.edit_record', patient_id=record.patient_id) }}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ record.patient_id }}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Delete Modal -->
+                            <div class="modal fade" id="deleteModal{{ record.patient_id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Delete Record</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Are you sure you want to delete the record for <strong>{{ record.full_name }}</strong>?</p>
+                                            <p class="text-danger"><small>This action cannot be undone.</small></p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form action="{{ url_for('main.delete_record', patient_id=record.patient_id) }}" method="post">
+                                                <button type="submit" class="btn btn-danger">Delete</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% elif form.search_term.data %}
+<div class="alert alert-info">
+    No records found matching your search criteria.
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <title>{% block title %}School Nurse Health Log{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --body-bg: #f1f5f9;
+            --card-bg: #ffffff;
+        }
+        
+        body {
+            padding-top: 20px;
+            background-color: var(--body-bg);
+            font-family: 'Inter', sans-serif;
+            color: var(--dark);
+            transition: all 0.3s ease;
+        }
+        
+        /* Navbar styling */
+        .navbar {
+            background: linear-gradient(135deg, var(--primary), #3b82f6) !important;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+            border-radius: 10px;
+        }
+        
+        .navbar-brand, .navbar .nav-link {
+            color: white !important;
+            font-weight: 500;
+        }
+        
+        .navbar .nav-link {
+            position: relative;
+            margin: 0 5px;
+        }
+        
+        .navbar .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background-color: white;
+            transition: width 0.3s ease;
+        }
+        
+        .navbar .nav-link:hover::after {
+            width: 100%;
+        }
+        
+        /* Card styling */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            margin-bottom: 24px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            background-color: var(--card-bg);
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+        
+        .card-header {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            background-color: rgba(0, 0, 0, 0.02);
+            border-top-left-radius: 12px !important;
+            border-top-right-radius: 12px !important;
+            padding: 15px 20px;
+        }
+        
+        .card-header.bg-primary {
+            background: linear-gradient(135deg, var(--primary), #3b82f6) !important;
+            color: white;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        /* Table styling */
+        .record-row {
+            transition: background-color 0.2s;
+        }
+        
+        .record-row:hover {
+            background-color: rgba(37, 99, 235, 0.05);
+            cursor: pointer;
+        }
+        
+        .table th {
+            font-weight: 600;
+            color: var(--secondary);
+            border-top: none;
+        }
+        
+        /* Button styling */
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            padding: 8px 16px;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+        }
+        
+        .btn-outline-primary {
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .btn-outline-primary:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+            border-color: var(--success);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+            border-color: var(--danger);
+        }
+        
+        .btn-sm {
+            padding: 4px 10px;
+            font-size: 0.875rem;
+        }
+        
+        .btn-group {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+            border-radius: 8px;
+        }
+        
+        /* Badge styling */
+        .badge {
+            font-weight: 500;
+            padding: 5px 10px;
+            border-radius: 6px;
+        }
+        
+        .badge.bg-warning {
+            color: #7c2d12;
+            background-color: #fef3c7 !important;
+        }
+        
+        .badge.bg-danger {
+            background-color: #fee2e2 !important;
+            color: #b91c1c;
+        }
+        
+        .badge.bg-info {
+            background-color: #e0f2fe !important;
+            color: #0369a1;
+        }
+        
+        .badge.bg-success {
+            background-color: #dcfce7 !important;
+            color: #166534;
+        }
+        
+        /* Avatar styling */
+        .avatar-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+        
+        .avatar-circle.sm {
+            width: 30px;
+            height: 30px;
+            font-size: 0.9rem;
+        }
+        
+        .avatar-circle.lg {
+            width: 60px;
+            height: 60px;
+            font-size: 1.8rem;
+        }
+        
+        /* Form styling */
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            padding: 10px 15px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+        
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--dark);
+        }
+        
+        .form-container {
+            background-color: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+        
+        /* Alert styling */
+        .alert {
+            border-radius: 10px;
+            border: none;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .alert-success {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        
+        .alert-danger {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+        
+        .alert-info {
+            background-color: #e0f2fe;
+            color: #0369a1;
+        }
+        
+        .alert-warning {
+            background-color: #fef3c7;
+            color: #7c2d12;
+        }
+        
+        /* Animation */
+        @keyframes slideIn {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .content {
+            animation: fadeIn 0.5s ease;
+        }
+        
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            .card {
+                margin-bottom: 15px;
+            }
+            .navbar-brand {
+                font-size: 1.1rem;
+            }
+            .container {
+                padding-left: 15px;
+                padding-right: 15px;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar navbar-expand-lg navbar-dark mb-4 px-3">
+            <div class="container-fluid">
+                <a class="navbar-brand d-flex align-items-center" href="{{ url_for('main.index') }}">
+                    <i class="bi bi-clipboard2-pulse-fill me-2"></i> 
+                    School Nurse Health Log
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center" href="{{ url_for('main.index') }}">
+                                <i class="bi bi-house-door me-1"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center" href="{{ url_for('main.add_record') }}">
+                                <i class="bi bi-plus-circle me-1"></i> Add Record
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center" href="{{ url_for('main.search') }}">
+                                <i class="bi bi-search me-1"></i> Search
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center" href="{{ url_for('main.import_from_excel') }}">
+                                <i class="bi bi-file-earmark-excel me-1"></i> Import
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} d-flex align-items-center" role="alert">
+                        {% if category == 'success' %}
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                        {% elif category == 'danger' %}
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        {% elif category == 'warning' %}
+                            <i class="bi bi-exclamation-circle-fill me-2"></i>
+                        {% elif category == 'info' %}
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                        {% endif %}
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="content mb-5">
+            {% block content %}{% endblock %}
+        </div>
+        
+        <footer class="mt-auto py-3 text-center text-muted">
+            <small>&copy; 2025 School Nurse Health Log | <i class="bi bi-shield-check"></i> Secure Health Records</small>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Make table rows clickable if they have a data-href attribute
+            document.querySelectorAll('tr.record-row').forEach(row => {
+                row.style.cursor = 'pointer';
+                row.addEventListener('click', function() {
+                    const id = this.querySelector('td:first-child').textContent.trim();
+                    window.location.href = `/view/${id}`;
+                });
+            });
+            
+            // Auto-dismiss alerts after 5 seconds
+            setTimeout(function() {
+                document.querySelectorAll('.alert').forEach(alert => {
+                    const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                    if (bsAlert) {
+                        bsAlert.close();
+                    }
+                });
+            }, 5000);
+            
+            // Initialize tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
+            
+            // Form field focus animations
+            const formFields = document.querySelectorAll('.form-control, .form-select');
+            formFields.forEach(field => {
+                field.addEventListener('focus', function() {
+                    this.closest('.form-group').classList.add('focused');
+                });
+                field.addEventListener('blur', function() {
+                    this.closest('.form-group').classList.remove('focused');
+                });
+            });
+            
+            // Set up visit reason radio buttons if they exist
+            const reasonSelect = document.getElementById('visit_reason');
+            if (reasonSelect) {
+                const currentValue = reasonSelect.value;
+                const radioButtons = document.querySelectorAll('input[name="visit_reason_radio"]');
+                
+                // Set initial state of radio buttons based on select value
+                radioButtons.forEach(radio => {
+                    if (radio.value === currentValue) {
+                        radio.checked = true;
+                    }
+                });
+                
+                // Format the blood pressure field for better input
+                const bpField = document.getElementById('blood_pressure');
+                if (bpField) {
+                    bpField.addEventListener('input', function() {
+                        // Auto-insert the slash after 3 digits if not present
+                        const value = this.value.replace(/[^0-9/]/g, '');
+                        if (value.length > 3 && value.indexOf('/') === -1) {
+                            this.value = value.substring(0, 3) + '/' + value.substring(3);
+                        }
+                    });
+                }
+            }
+            
+            // Add active class to current nav item
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.navbar .nav-link').forEach(link => {
+                const href = link.getAttribute('href');
+                if (href === currentPath || 
+                   (currentPath.includes('/view/') && href === '/' && currentPath !== '/search') || 
+                   (currentPath.includes('/edit/') && href.includes('/add'))) {
+                    link.classList.add('active');
+                    link.style.fontWeight = '600';
+                }
+            });
+            
+            // Add form field animations
+            document.querySelectorAll('.form-control, .form-select').forEach(field => {
+                field.addEventListener('focus', function() {
+                    this.parentElement.classList.add('focused');
+                });
+                field.addEventListener('blur', function() {
+                    this.parentElement.classList.remove('focused');
+                });
+            });
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

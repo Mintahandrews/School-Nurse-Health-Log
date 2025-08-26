@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Import Records - School Nurse Health Log{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Import Records from Excel</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-4">
+                        <p>Import health records from an Excel file. The system will attempt to match the columns from your Excel file to the required format.</p>
+                        <p>Your Excel file should have the following columns (not all are required):</p>
+                        <div class="table-responsive small">
+                            <table class="table table-bordered table-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Column Name</th>
+                                        <th>Description</th>
+                                        <th>Required</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Full Name</td>
+                                        <td>Patient's full name</td>
+                                        <td class="text-center">✅</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Date of Visit</td>
+                                        <td>Date of the health office visit</td>
+                                        <td class="text-center">✅</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Nurse Name</td>
+                                        <td>Name of the attending nurse</td>
+                                        <td class="text-center">✅</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Patient ID</td>
+                                        <td>Unique identifier (will be generated if not provided)</td>
+                                        <td class="text-center">❌</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Other fields</td>
+                                        <td>Age, Gender, Grade Level, Visit Reason, etc.</td>
+                                        <td class="text-center">❌</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-group">
+                            {{ form.excel_file.label(class="form-label") }}
+                            {{ form.excel_file(class="form-control") }}
+                            {% if form.excel_file.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.excel_file.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Select an Excel file (.xlsx) to import</div>
+                        </div>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        {{ form.has_headers(class="form-check-input") }}
+                        {{ form.has_headers.label(class="form-check-label") }}
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back
+                        </a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
