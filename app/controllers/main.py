@@ -5,6 +5,7 @@ from flask import (
 import sqlite3
 import os
 from datetime import datetime
+import re
 import tempfile
 import pandas as pd
 from ..models.db import get_db_connection, generate_patient_id
@@ -27,18 +28,30 @@ def index():
         form.search_term.data = search_term
         
         search_pattern = f"%{search_term}%"
-        records = conn.execute(
+        # Use SELECT * to be compatible with older SQLite schemas
+        rows = conn.execute(
             '''SELECT * FROM records 
                WHERE full_name LIKE ? OR patient_id LIKE ? OR nurse_name LIKE ?
-               ORDER BY date_of_visit DESC, time_of_visit DESC''', 
+               ORDER BY date_of_visit DESC, time_of_visit DESC''',
             (search_pattern, search_pattern, search_pattern)
         ).fetchall()
+        # Normalize visit_reason key for templates
+        records = []
+        for r in rows:
+            d = dict(r)
+            d['visit_reason'] = d.get('visit_reason') or d.get('visit_reason_category')
+            records.append(d)
     else:
-        # Default: get all records
-        records = conn.execute('''
+        # Default: get all records, normalize visit_reason
+        rows = conn.execute('''
             SELECT * FROM records 
             ORDER BY date_of_visit DESC, time_of_visit DESC
         ''').fetchall()
+        records = []
+        for r in rows:
+            d = dict(r)
+            d['visit_reason'] = d.get('visit_reason') or d.get('visit_reason_category')
+            records.append(d)
     
     conn.close()
     return render_template('index.html', records=records, form=form, title="School Nurse Health Log")
@@ -81,15 +94,39 @@ def add_record():
         
         conn.execute(
             '''INSERT INTO records 
-               (patient_id, full_name, date_of_birth, age, gender, grade_level, 
-                date_of_visit, time_of_visit, nurse_name, visit_reason, visit_details,
-                temperature, pulse, blood_pressure, notes, created_at) 
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-            (patient_id, form.full_name.data, date_of_birth, form.age.data, 
-             form.gender.data, form.grade_level.data, date_of_visit, time_of_visit, 
-             form.nurse_name.data, form.visit_reason.data, form.visit_details.data,
-             form.temperature.data, form.pulse.data, form.blood_pressure.data, 
-             form.notes.data, datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+               (patient_id, full_name, date_of_birth, age, gender, grade_level,
+                date_of_visit, time_of_visit, nurse_name, visit_reason_category, visit_details,
+                temperature, heart_rate, respiratory_rate, oxygen_saturation,
+                blood_pressure_systolic, blood_pressure_diastolic,
+                height, weight, bmi, pain_scale, pain_location,
+                notes, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            (
+                patient_id,
+                form.full_name.data,
+                date_of_birth,
+                form.age.data,
+                form.gender.data,
+                form.grade_level.data,
+                date_of_visit,
+                time_of_visit,
+                form.nurse_name.data,
+                (form.visit_reason.data or form.visit_reason_category.data),
+                form.visit_details.data,
+                form.temperature.data,
+                form.heart_rate.data,
+                form.respiratory_rate.data,
+                form.oxygen_saturation.data,
+                form.blood_pressure_systolic.data,
+                form.blood_pressure_diastolic.data,
+                form.height.data,
+                form.weight.data,
+                form.bmi.data,
+                (form.pain_level.data if hasattr(form, 'pain_level') else form.pain_scale.data),
+                form.pain_location.data,
+                form.notes.data,
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            )
         )
         conn.commit()
         conn.close()
@@ -110,6 +147,9 @@ def edit_record(patient_id):
         flash('Record not found', 'danger')
         return redirect(url_for('main.index'))
     
+    # Convert sqlite3.Row to dict for safe .get() access
+    record = dict(record)
+
     form = RecordForm()
     
     if request.method == 'GET':
@@ -126,12 +166,23 @@ def edit_record(patient_id):
         form.date_of_visit.data = datetime.strptime(record['date_of_visit'], '%Y-%m-%d').date()
         form.time_of_visit.data = datetime.strptime(record['time_of_visit'], '%H:%M').time()
         form.nurse_name.data = record['nurse_name']
-        form.visit_reason.data = record['visit_reason']
+        form.visit_reason.data = record.get('visit_reason_category') or record.get('visit_reason')
         form.visit_details.data = record.get('visit_details', '')
-        form.temperature.data = record['temperature']
-        form.pulse.data = record['pulse']
-        form.blood_pressure.data = record['blood_pressure']
-        form.notes.data = record['notes']
+        form.temperature.data = record.get('temperature')
+        form.heart_rate.data = record.get('heart_rate')
+        form.respiratory_rate.data = record.get('respiratory_rate')
+        form.oxygen_saturation.data = record.get('oxygen_saturation')
+        form.blood_pressure_systolic.data = record.get('blood_pressure_systolic')
+        form.blood_pressure_diastolic.data = record.get('blood_pressure_diastolic')
+        form.height.data = record.get('height')
+        form.weight.data = record.get('weight')
+        form.bmi.data = record.get('bmi')
+        if hasattr(form, 'pain_scale'):
+            form.pain_scale.data = record.get('pain_scale')
+        if hasattr(form, 'pain_level') and form.pain_level.data is None:
+            form.pain_level.data = record.get('pain_level')
+        form.pain_location.data = record.get('pain_location')
+        form.notes.data = record.get('notes')
     
     if form.validate_on_submit():
         # Format date and time objects to strings
@@ -143,13 +194,22 @@ def edit_record(patient_id):
         conn.execute(
             '''UPDATE records SET 
                full_name = ?, date_of_birth = ?, age = ?, gender = ?, grade_level = ?, 
-               date_of_visit = ?, time_of_visit = ?, nurse_name = ?, visit_reason = ?, 
-               visit_details = ?, temperature = ?, pulse = ?, blood_pressure = ?, notes = ? 
+               date_of_visit = ?, time_of_visit = ?, nurse_name = ?, visit_reason_category = ?, 
+               visit_details = ?, temperature = ?, heart_rate = ?, respiratory_rate = ?, oxygen_saturation = ?,
+               blood_pressure_systolic = ?, blood_pressure_diastolic = ?,
+               height = ?, weight = ?, bmi = ?, pain_scale = ?, pain_location = ?,
+               notes = ? 
                WHERE patient_id = ?''',
-            (form.full_name.data, date_of_birth, form.age.data, form.gender.data, 
-             form.grade_level.data, date_of_visit, time_of_visit, form.nurse_name.data,
-             form.visit_reason.data, form.visit_details.data, form.temperature.data,
-             form.pulse.data, form.blood_pressure.data, form.notes.data, patient_id)
+            (
+                form.full_name.data, date_of_birth, form.age.data, form.gender.data, 
+                form.grade_level.data, date_of_visit, time_of_visit, form.nurse_name.data,
+                (form.visit_reason.data or form.visit_reason_category.data), form.visit_details.data, form.temperature.data,
+                form.heart_rate.data, form.respiratory_rate.data, form.oxygen_saturation.data,
+                form.blood_pressure_systolic.data, form.blood_pressure_diastolic.data,
+                form.height.data, form.weight.data, form.bmi.data,
+                (form.pain_level.data if hasattr(form, 'pain_level') else form.pain_scale.data), form.pain_location.data,
+                form.notes.data, patient_id
+            )
         )
         conn.commit()
         conn.close()
@@ -159,7 +219,7 @@ def edit_record(patient_id):
     
     return render_template('record_form.html', form=form, title="Edit Health Record", record=record)
 
-@main.route('/delete/<patient_id>', methods=['POST'])
+@main.route('/delete/<patient_id>', methods=['GET', 'POST'])
 def delete_record(patient_id):
     """Delete a health record"""
     conn = get_db_connection()
@@ -191,28 +251,36 @@ def view_record(patient_id):
 @main.route('/export')
 def export_to_excel():
     """Export all health records to Excel"""
-    conn = get_db_connection()
-    records = conn.execute('SELECT * FROM records ORDER BY date_of_visit DESC, time_of_visit DESC').fetchall()
-    conn.close()
-    
-    if not records:
-        flash('No records to export', 'warning')
+    try:
+        conn = get_db_connection()
+        records = conn.execute('SELECT * FROM records ORDER BY date_of_visit DESC, time_of_visit DESC').fetchall()
+        conn.close()
+        
+        if not records:
+            flash('No records to export', 'warning')
+            return redirect(url_for('main.index'))
+        
+        # Ensure we pass dictionaries to the Excel exporter (sqlite3.Row doesn't have .get)
+        records = [dict(r) for r in records]
+        
+        # Create a temporary file to store the Excel
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
+            filename = tmp.name
+        
+        # Use our utility function to export records
+        export_records_to_excel(records, filename)
+        
+        # Send the file to the user
+        return send_file(
+            filename,
+            as_attachment=True,
+            download_name=f"nurse_records_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+    except Exception as e:
+        current_app.logger.exception("Export failed")
+        flash(f"Export failed: {str(e)}", 'danger')
         return redirect(url_for('main.index'))
-    
-    # Create a temporary file to store the Excel
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
-        filename = tmp.name
-    
-    # Use our utility function to export records
-    export_records_to_excel(records, filename)
-    
-    # Send the file to the user
-    return send_file(
-        filename,
-        as_attachment=True,
-        download_name=f"nurse_records_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
 
 @main.route('/import', methods=['GET', 'POST'])
 def import_from_excel():
@@ -249,11 +317,16 @@ def import_from_excel():
                 'date_of_visit': None,
                 'time_of_visit': None,
                 'nurse_name': None,
+                # reason fields (support legacy and new)
                 'visit_reason': None,
+                'visit_reason_category': None,
                 'visit_details': None,
+                # vitals (support legacy pulse and new heart_rate)
                 'temperature': None,
                 'pulse': None,
-                'blood_pressure': None,
+                'heart_rate': None,
+                'blood_pressure': None,  # combined like 120/80
+                # free text
                 'notes': None
             }
             
@@ -335,23 +408,51 @@ def import_from_excel():
                     gender = str(row[db_columns['gender']]) if db_columns['gender'] is not None and pd.notna(row[db_columns['gender']]) else None
                     grade_level = str(row[db_columns['grade_level']]) if db_columns['grade_level'] is not None and pd.notna(row[db_columns['grade_level']]) else None
                     nurse_name = str(row[db_columns['nurse_name']]).strip() if db_columns['nurse_name'] is not None else "Unknown"
-                    visit_reason = str(row[db_columns['visit_reason']]) if db_columns['visit_reason'] is not None and pd.notna(row[db_columns['visit_reason']]) else None
+                    # Visit reason (prefer explicit visit_reason_category if present)
+                    visit_reason = None
+                    if db_columns['visit_reason_category'] is not None and pd.notna(row[db_columns['visit_reason_category']]):
+                        visit_reason = str(row[db_columns['visit_reason_category']])
+                    elif db_columns['visit_reason'] is not None and pd.notna(row[db_columns['visit_reason']]):
+                        visit_reason = str(row[db_columns['visit_reason']])
                     visit_details = str(row[db_columns['visit_details']]) if db_columns['visit_details'] is not None and pd.notna(row[db_columns['visit_details']]) else None
                     temperature = float(row[db_columns['temperature']]) if db_columns['temperature'] is not None and pd.notna(row[db_columns['temperature']]) else None
-                    pulse = int(row[db_columns['pulse']]) if db_columns['pulse'] is not None and pd.notna(row[db_columns['pulse']]) else None
-                    blood_pressure = str(row[db_columns['blood_pressure']]) if db_columns['blood_pressure'] is not None and pd.notna(row[db_columns['blood_pressure']]) else None
+                    # Heart rate from either 'heart_rate' or legacy 'pulse'
+                    hr = None
+                    if db_columns['heart_rate'] is not None and pd.notna(row[db_columns['heart_rate']]):
+                        try:
+                            hr = int(row[db_columns['heart_rate']])
+                        except:
+                            hr = None
+                    if hr is None and db_columns['pulse'] is not None and pd.notna(row[db_columns['pulse']]):
+                        try:
+                            hr = int(row[db_columns['pulse']])
+                        except:
+                            hr = None
+                    # Blood pressure: parse combined string like "120/80"
+                    bp_sys = None
+                    bp_dia = None
+                    if db_columns['blood_pressure'] is not None and pd.notna(row[db_columns['blood_pressure']]):
+                        try:
+                            bp_text = str(row[db_columns['blood_pressure']])
+                            parts = [p for p in re.split(r"[^0-9]", bp_text) if p.strip()]
+                            if len(parts) >= 2:
+                                bp_sys = int(parts[0])
+                                bp_dia = int(parts[1])
+                        except:
+                            bp_sys = None
+                            bp_dia = None
                     notes = str(row[db_columns['notes']]) if db_columns['notes'] is not None and pd.notna(row[db_columns['notes']]) else None
                     
                     # Insert record into database
                     conn.execute(
                         '''INSERT OR REPLACE INTO records 
                            (patient_id, full_name, date_of_birth, age, gender, grade_level, 
-                            date_of_visit, time_of_visit, nurse_name, visit_reason, visit_details,
-                            temperature, pulse, blood_pressure, notes, created_at) 
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                            date_of_visit, time_of_visit, nurse_name, visit_reason_category, visit_details,
+                            temperature, heart_rate, blood_pressure_systolic, blood_pressure_diastolic, notes, created_at) 
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                         (patient_id, full_name, date_of_birth, age, gender, grade_level, 
                          date_of_visit, time_of_visit, nurse_name, visit_reason, visit_details,
-                         temperature, pulse, blood_pressure, notes, 
+                         temperature, hr, bp_sys, bp_dia, notes, 
                          datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                     )
                     success_count += 1

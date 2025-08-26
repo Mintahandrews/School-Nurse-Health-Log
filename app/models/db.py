@@ -81,9 +81,10 @@ def init_db():
         nurse_name TEXT NOT NULL,
         visit_reason_category TEXT,
         severity_level TEXT,
+        visit_details TEXT,
         
         -- Vital Signs
-        temperature REAL,  -- in Fahrenheit
+        temperature REAL,  -- in Celsius
         heart_rate INTEGER,  -- bpm (replaces pulse)
         respiratory_rate INTEGER,  -- breaths per minute
         oxygen_saturation REAL,  -- percentage

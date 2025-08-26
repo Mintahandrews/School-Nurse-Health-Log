@@ -132,17 +132,18 @@ def export_records_to_excel(records, output_file=None):
     
     # Write data rows
     for record in records:
-        # Convert record to dict if it's a SQLAlchemy model
+        # Normalize to dict
         if hasattr(record, '__table__'):
             record = {c.name: getattr(record, c.name) for c in record.__table__.columns}
         
-        # Create a row with all fields, using empty string for missing fields
+        # Row assembly with header-to-field mapping
         row = []
         for header in headers:
-            # Map header to record field name (convert spaces to underscores and lowercase)
-            field_name = header.lower().replace(' ', '_')
+            # Default mapping based on header
+            normalized = header.lower().strip()
+            field_name = normalized.replace(' ', '_')
             
-            # Handle special cases for field names that don't match exactly
+            # Explicit mappings for discrepancies/special cases
             if header == 'Parent/Guardian Name':
                 field_name = 'parent_primary_name'
             elif header == 'Parent/Guardian Phone':
@@ -151,6 +152,43 @@ def export_records_to_excel(records, output_file=None):
                 field_name = 'emergency_contact_name'
             elif header == 'Emergency Contact Phone':
                 field_name = 'emergency_contact_phone'
+            elif header == 'Grade/Year Level':
+                field_name = 'grade_level'
+            elif header == 'Visit Reason Category':
+                # Prefer new column, fallback to legacy
+                value = record.get('visit_reason_category') or record.get('visit_reason')
+                row.append(format_value_for_excel(value))
+                continue
+            elif header == 'Temperature (°C)':
+                field_name = 'temperature'
+            elif header == 'Pulse (bpm)':
+                field_name = 'heart_rate'
+            elif header == 'Respiratory Rate (cpm)':
+                field_name = 'respiratory_rate'
+            elif header == 'Oxygen Saturation (%)':
+                field_name = 'oxygen_saturation'
+            elif header == 'Blood Pressure (mmHg)':
+                # Combine systolic/diastolic if available
+                sys_v = record.get('blood_pressure_systolic')
+                dia_v = record.get('blood_pressure_diastolic')
+                if sys_v is not None and dia_v is not None:
+                    row.append(f"{sys_v}/{dia_v}")
+                else:
+                    # Fallback to any legacy combined field
+                    row.append(format_value_for_excel(record.get('blood_pressure')))
+                continue
+            elif header == 'Special Medical Needs':
+                field_name = 'special_medical_needs'
+            elif header == 'Next Step(s)':
+                field_name = 'next_steps'
+            elif header == 'Parent Notified':
+                field_name = 'parent_notified'
+            elif header == 'Incident Report Required':
+                field_name = 'incident_report_required'
+            elif header == 'Return to Class Time':
+                field_name = 'return_to_class_time'
+            elif header == 'Brought In By':
+                field_name = 'brought_in_by'
             
             # Get the value and format it
             value = record.get(field_name, '')

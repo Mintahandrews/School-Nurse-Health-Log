@@ -779,10 +779,10 @@
                                 <div class="form-group">
                                     <div class="input-group">
                                         {{ form.temperature.label(class="form-label w-100") }}
-                                        {{ form.temperature(class="form-control" + (' is-invalid' if form.temperature.errors else ''), placeholder="98.6") }}
-                                        <span class="input-group-text">°F</span>
+                                        {{ form.temperature(class="form-control" + (' is-invalid' if form.temperature.errors else ''), placeholder="37.0") }}
+                                        <span class="input-group-text">°C</span>
                                     </div>
-                                    <div class="form-text">Normal: 97-99°F</div>
+                                    <div class="form-text">Normal: 36.1–37.2°C</div>
                                     {% if form.temperature.errors %}
                                         <div class="invalid-feedback d-block">
                                             {{ form.temperature.errors[0] }}

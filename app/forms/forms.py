@@ -4,7 +4,7 @@ from wtforms import (
     StringField, DateField, TimeField, SelectField, TextAreaField, 
     SubmitField, BooleanField, IntegerField, FloatField, DecimalField
 )
-from wtforms.validators import DataRequired, Optional, NumberRange, Length, Email, URL, AnyOf
+from wtforms.validators import DataRequired, Optional, NumberRange, Length, Email, URL, AnyOf, ValidationError
 from datetime import datetime, date
 
 # Custom validators
@@ -38,12 +38,34 @@ class RecordForm(FlaskForm):
         *[(str(i), f'Grade {i}') for i in range(1, 13)],
         ('College', 'College')
     ], validators=[Optional()])
+    # Fields referenced by template but not stored in DB
+    student_id = StringField('Student ID', validators=[Optional(), Length(max=50)])
+    homeroom = StringField('Homeroom/Advisory', validators=[Optional(), Length(max=50)])
     
     # ===== Contact Information =====
     parent_primary_name = StringField("Parent/Guardian's Name", validators=[Optional(), Length(max=100)])
     parent_primary_phone = StringField("Parent/Guardian's Phone", validators=[Optional(), Length(max=20)])
     emergency_contact_name = StringField("Emergency Contact Name", validators=[Optional(), Length(max=100)])
     emergency_contact_phone = StringField("Emergency Contact Phone", validators=[Optional(), Length(max=20)])
+    # Additional contact fields used by template
+    primary_contact_name = StringField('Primary Contact Name', validators=[Optional(), Length(max=100)])
+    primary_contact_relationship = SelectField('Primary Contact Relationship', choices=[
+        ('', 'Select Relationship'),
+        ('Parent', 'Parent'),
+        ('Guardian', 'Guardian'),
+        ('Relative', 'Relative'),
+        ('Other', 'Other')
+    ], validators=[Optional()])
+    primary_phone = StringField('Primary Phone', validators=[Optional(), Length(max=20)])
+    secondary_phone = StringField('Secondary Phone', validators=[Optional(), Length(max=20)])
+    email = StringField('Email', validators=[Optional(), Email(), Length(max=120)])
+    address = StringField('Address', validators=[Optional(), Length(max=200)])
+    emergency_contact_relationship = StringField('Emergency Contact Relationship', validators=[Optional(), Length(max=50)])
+    emergency_phone = StringField('Emergency Phone', validators=[Optional(), Length(max=20)])
+    family_physician = StringField('Family Physician', validators=[Optional(), Length(max=100)])
+    physician_phone = StringField('Physician Phone', validators=[Optional(), Length(max=20)])
+    insurance_provider = StringField('Insurance Provider', validators=[Optional(), Length(max=100)])
+    insurance_policy_number = StringField('Insurance Policy Number', validators=[Optional(), Length(max=50)])
     
     # ===== Visit Information =====
     academic_year = StringField('Academic Year', validators=[Optional()], 
@@ -69,7 +91,7 @@ class RecordForm(FlaskForm):
     ], validators=[Optional()])
     nurse_name = StringField('Nurse Name', validators=[DataRequired(), Length(max=100)])
     
-    # Standardized to use visit_reason_category only (removed duplicate visit_reason)
+    # Standardized visit reason; also provide legacy alias used by template/controller
     visit_reason_category = SelectField('Visit Reason', choices=[
         ('', 'Select Reason'),
         ('Illness', 'Illness'),
@@ -79,6 +101,32 @@ class RecordForm(FlaskForm):
         ('Follow-up', 'Follow-up'),
         ('Other', 'Other')
     ], validators=[DataRequired()])
+    # Alias used in templates and older controller code
+    visit_reason = SelectField('Visit Reason', choices=[
+        ('', 'Select Reason'),
+        ('Illness', 'Illness'),
+        ('Injury', 'Injury'),
+        ('Medication', 'Medication'),
+        ('Routine Check', 'Routine Check'),
+        ('Follow-up', 'Follow-up'),
+        ('Other', 'Other')
+    ], validators=[Optional()])
+    visit_details = StringField('Visit Details', validators=[Optional(), Length(max=200)])
+    visit_type = SelectField('Visit Type', choices=[
+        ('', 'Select Type'),
+        ('Initial', 'Initial'),
+        ('Follow-up', 'Follow-up'),
+        ('Screening', 'Screening'),
+        ('Other', 'Other')
+    ], validators=[Optional()])
+    visit_status = SelectField('Visit Status', choices=[
+        ('', 'Select Status'),
+        ('Open', 'Open'),
+        ('Closed', 'Closed'),
+        ('Referred', 'Referred')
+    ], validators=[Optional()])
+    chief_complaint = StringField('Chief Complaint', validators=[Optional(), Length(max=200)])
+    symptoms = TextAreaField('Symptoms', validators=[Optional()])
     
     severity_level = SelectField('Severity Level', choices=[
         ('', 'Select Severity'),
@@ -90,10 +138,16 @@ class RecordForm(FlaskForm):
     
     # ===== Vital Signs =====
     # Standardized to use heart_rate instead of pulse
-    temperature = DecimalField('Temperature (°F)', places=1, validators=[
+    temperature = DecimalField('Temperature (°C)', places=1, validators=[
         Optional(), 
-        NumberRange(min=90, max=110, message='Temperature must be between 90-110°F')
+        NumberRange(min=30, max=45, message='Temperature must be between 30-45°C')
     ])
+    # Legacy fields referenced by controller; keep Optional
+    pulse = IntegerField('Pulse (bpm)', validators=[Optional(), NumberRange(min=30, max=250)])
+    blood_pressure = StringField('Blood Pressure', validators=[Optional(), Length(max=20)])
+    # New split blood pressure fields used by controller/DB
+    blood_pressure_systolic = IntegerField('Blood Pressure Systolic', validators=[Optional(), NumberRange(min=40, max=300)])
+    blood_pressure_diastolic = IntegerField('Blood Pressure Diastolic', validators=[Optional(), NumberRange(min=20, max=200)])
     heart_rate = IntegerField('Heart Rate (bpm)', validators=[
         Optional(), 
         NumberRange(min=30, max=250, message='Heart rate must be between 30-250 bpm')
@@ -133,7 +187,17 @@ class RecordForm(FlaskForm):
         Optional(),
         NumberRange(min=0, max=10, message='Pain scale must be between 0-10')
     ])
+    # Alias used in template
+    pain_level = IntegerField('Pain Level (0-10)', validators=[Optional(), NumberRange(min=0, max=10)])
     pain_location = StringField('Pain Location', validators=[Optional(), Length(max=100)])
+    duration_of_symptoms = StringField('Duration of Symptoms', validators=[Optional(), Length(max=100)])
+    onset = SelectField('Onset', choices=[
+        ('', 'Select Onset'),
+        ('Sudden', 'Sudden'),
+        ('Gradual', 'Gradual'),
+        ('Unknown', 'Unknown')
+    ], validators=[Optional()])
+    vitals_notes = TextAreaField('Vitals Notes', validators=[Optional()])
     
     # ===== Presenting Complaints =====
     presenting_complaints = SelectField('Presenting Complaint(s)', choices=[

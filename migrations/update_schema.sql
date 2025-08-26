@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS new_records (
     nurse_name TEXT NOT NULL,
     visit_reason_category TEXT,
     severity_level TEXT,
+    visit_details TEXT,
     
     -- Vital Signs
     temperature REAL,  -- in Fahrenheit
@@ -51,7 +52,7 @@ CREATE TABLE IF NOT EXISTS new_records (
     past_medical_history TEXT,
     known_allergies TEXT,
     current_medications TEXT,
-    special_needs_flag BOOLEAN DEFAULT 0,
+    special_medical_needs BOOLEAN DEFAULT 0,
     chronic_conditions TEXT,
     
     -- Assessment & Care
@@ -87,14 +88,14 @@ CREATE TABLE IF NOT EXISTS new_records (
 -- Copy existing data to the new table with field mappings
 INSERT INTO new_records (
     id, patient_id, full_name, date_of_birth, age, gender, grade_level,
-    date_of_visit, time_of_visit, nurse_name, visit_reason_category,
+    date_of_visit, time_of_visit, nurse_name, visit_reason_category, visit_details,
     temperature, heart_rate, respiratory_rate, oxygen_saturation,
     blood_pressure_systolic, blood_pressure_diastolic, notes, created_at
 ) 
 SELECT 
     id, patient_id, full_name, date_of_birth, age, gender, grade_level,
-    date_of_visit, time_of_visit, nurse_name, visit_reason as visit_reason_category,
-    temperature, pulse as heart_rate, NULL as respiratory_rate, NULL as oxygen_saturation,
+    date_of_visit, time_of_visit, nurse_name, visit_reason as visit_reason_category, NULL as visit_details,
+    ((temperature - 32.0) * 5.0/9.0) as temperature, pulse as heart_rate, NULL as respiratory_rate, NULL as oxygen_saturation,
     NULL as blood_pressure_systolic, NULL as blood_pressure_diastolic, notes, created_at
 FROM records;
 
